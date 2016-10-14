@@ -10,7 +10,7 @@ public class PlayerControler : MonoBehaviour {
 
 	bool isHolded;	//タッチし続けている状態か
 	bool standby = true;
-	Vector3 force; //移動値
+	[SerializeField] Vector3 force; //移動値
 
 	[SerializeField] float friction = 0.005f;	//摩擦係数
 	[SerializeField] float minforce = 0.2f;	//停止移動値
@@ -29,7 +29,7 @@ public class PlayerControler : MonoBehaviour {
 		force *= friction;
 		standby = false;
 		if (force.magnitude < minforce) {
-			force = default(Vector3);
+			//force = default(Vector3);
 			standby = true;
 		}
 		//このスクリプトがアタッチされているGameObject
@@ -62,6 +62,7 @@ public class PlayerControler : MonoBehaviour {
 
 		if (Input.GetMouseButtonUp (0) && isHolded) {
 			Vector3 pos = Camera.main.ScreenToWorldPoint (Input.mousePosition);
+			Debug.Log (pos);
 			pos.z = transform.position.z;
 			force = transform.position - pos;
 			force *= power;
@@ -71,6 +72,7 @@ public class PlayerControler : MonoBehaviour {
 	}
 
 	void OnTriggerEnter2D(Collider2D coll){
+		Debug.Log ("Onhit");
 		//壁に当たったら反対側に
 		if(coll.CompareTag(TOP_WALL) || coll.CompareTag(BOTTOM_WALL)){
 			force.y *= -1;
@@ -78,6 +80,20 @@ public class PlayerControler : MonoBehaviour {
 		else if(coll.CompareTag(LEFT_WALL) || coll.CompareTag(RIGHT_WALL)) {
 			force.x *= -1;
 		}
-	
+		else if(coll.CompareTag("Enemy")){
+			Vector3 vectoEnemy = coll.gameObject.transform.position - this.transform.position;
+			force.z = 0;
+			vectoEnemy.z = 0;
+
+
+			float deg = Vector2.Angle (force, vectoEnemy);
+
+			Vector3 cross = Vector3.Cross (force, vectoEnemy);
+			if (cross.z > 0) deg *= -1;
+
+			force = Quaternion.AngleAxis (deg * 2, Vector3.back) * force * -1;
+			coll.GetComponent<EnemyController> ().Damage (10);
+			
+		}
 	}
 }
